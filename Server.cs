@@ -22,4 +22,6 @@ class Server
     public boolean removeUser(string userid)
     {
     }
+
+    public static void Main(){} 
 }
