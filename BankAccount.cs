@@ -3,7 +3,7 @@ class BankAccount
     private string userid;
     private double balance;
 
-    publci BankAccount(string userid, double balance)
+    public BankAccount(string userid, double balance)
     {
         this.userid = userid;
         this.balance = balance;

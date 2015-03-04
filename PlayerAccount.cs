@@ -3,22 +3,9 @@ class PlayerAccount
     private string userid;
     private string userName;
     private BankAccount bankAccount;
-    private Wallet wallet;
 
-    public Wallet Wallet
-    {
-        get { retunr wallet; }
-    }
-
-    public UserID
-    {
-        get { return userid; }
-    }
-
-    public UserName
-    {
-        get { return userName; }
-    }
+    public Wallet wallet {get;}
+    public UserName username {get;}
 
     public PlayerAccount(string userid, string userName, BankAccount bankAccount)
     {

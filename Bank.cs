@@ -2,7 +2,6 @@ class Bank
 {
     private BankAccount[] bankAccounts;
     private const double FIXED_MONEY = 100000.00;
-    private static readonly currentMoney;
     private static Bank theBank = null;
 
     private Bank()
