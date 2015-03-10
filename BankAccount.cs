@@ -2,13 +2,6 @@ class BankAccount
 {
     private string userid;
     private double balance;
-
-    public BankAccount(string userid, double balance)
-    {
-        this.userid = userid;
-        this.balance = balance;
-    }
-
     public string UserID
     {
         get { return userid; }
@@ -17,5 +10,12 @@ class BankAccount
     public double Balance
     {
         get { return balance; }
+        set { balance = value; }
+    }
+
+    public BankAccount(string userid, double balance)
+    {
+        this.userid = userid;
+        this.balance = balance;
     }
 }

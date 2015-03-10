@@ -1,31 +1,43 @@
+using System.Collections.Generic;
+
 class Bank
 {
-    private BankAccount[] bankAccounts;
-    private const double FIXED_MONEY = 100000.00;
-    private static Bank theBank = null;
+    private List<BankAccount> accounts;
+    private static readonly Bank instance = new Bank();
 
     private Bank()
     {
-        // TODO: create accounts
-        
+        accounts = new List<BankAccount>();
+
+        // TODO: load account information from database and create BankAccount objects
+        // establish database connection, start transaction
+        // while there are still accounts to be created
+        //    query database for information for next account
+        //    use data from response to initialize a new BankAccount object
+        //    add the new BankAccount to the accounts list
+        // end while
     }
 
-    public Bank getBank()
+    public static Bank Instance
     {
-        if (theBank == null)
+        get { return instance; }
+    }
+
+    public bool withdraw(BankAccount account, double amount)
+    {
+        if (account.Balance < amount)
         {
-            theBank = new Bank();
+            return false;
         }
 
-        return theBank;
-    }
-
-    public boolean withdraw(BankAccount account, double amount)
-    {
-        return false;
+        account.Balance -= amount;
+        return true;
     }
 
     public void deposit(BankAccount account, double amount)
     {
+        account.Balance += amount;
     }
+
+    private const double FIXED_MONEY = 100000.00;
 }

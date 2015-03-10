@@ -19,7 +19,7 @@ class Client
         get { return playerAccount; }
     }
 
-    public boolean authenticate(string userName, string password)
+    public bool authenticate(string userName, string password)
     {
         return false;
     }

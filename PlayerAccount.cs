@@ -2,15 +2,23 @@ class PlayerAccount
 {
     private string userid;
     private string userName;
-    private BankAccount bankAccount;
+    private BankAccount account;
+    private Wallet wallet;
 
-    public Wallet wallet {get;}
-    public UserName username {get;}
+    public Wallet Wallet
+    {
+        get { return wallet; }
+    }
 
-    public PlayerAccount(string userid, string userName, BankAccount bankAccount)
+    public string UserName
+    {
+        get { return userName; }
+    }
+
+    public PlayerAccount(string userid, string userName, BankAccount account)
     {
         this.userid = userid;
-        this.username = userName;
-        this.bankAccount = bankAccount;
+        this.userName = userName;
+        this.account = account;
     }    
 }

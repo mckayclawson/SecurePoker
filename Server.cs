@@ -1,10 +1,12 @@
+using System.Collections.Generic;
+
 class Server
 {
-    private PlayerAccount[] playerAccounts;
+    private List<PlayerAccount> accounts;
 
     public Bank Bank
     {
-        get { return Bank.getBank(); }
+        get { return Bank.Instance; }
     }
 
     public void startSession(int sessionid)
@@ -15,13 +17,17 @@ class Server
     {
     }
 
-    public boolean addUser(string userid, string userName, string password)
+    public bool addUser(string userid, string userName, string password)
     {
+        return false;
     }
 
-    public boolean removeUser(string userid)
+    public bool removeUser(string userid)
     {
+        return false;
     }
 
-    public static void Main(){} 
+    public static void Main()
+    {
+    } 
 }
