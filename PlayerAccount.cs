@@ -20,5 +20,8 @@ class PlayerAccount
         this.userid = userid;
         this.userName = userName;
         this.account = account;
+
+        wallet = new Wallet();
+        wallet.Cents = (int)(account.Balance * 100.0);
     }    
 }

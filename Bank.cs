@@ -3,7 +3,6 @@ using System.Collections.Generic;
 class Bank
 {
     private List<BankAccount> accounts;
-    private static readonly Bank instance = new Bank();
 
     private Bank()
     {
@@ -39,5 +38,6 @@ class Bank
         account.Balance += amount;
     }
 
+    private static readonly Bank instance = new Bank();
     private const double FIXED_MONEY = 100000.00;
 }

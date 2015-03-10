@@ -1,8 +1,12 @@
+using System.Net;
+using System.Net.Sockets;
+
 class Client
 {
     private string url;
     private int port;
     private PlayerAccount playerAccount;
+    private TcpClient connection;
 
     public string ServerURL
     {
@@ -33,5 +37,6 @@ class Client
         this.url = url;
         this.port = port;
         this.playerAccount = playerAccount;
+        connection = new TcpClient(url, port);
     }
 }
