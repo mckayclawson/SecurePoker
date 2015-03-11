@@ -64,8 +64,6 @@ class Server
 
             System.Console.WriteLine(deserializedInfo.userName);
             System.Console.WriteLine(deserializedInfo.password);
-
-            break;
         }
 
         connection.Stop();
