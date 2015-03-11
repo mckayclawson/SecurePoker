@@ -2,11 +2,19 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.IO;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 class Server
 {
     private List<PlayerAccount> accounts;
-    private TcpListener connection;
+
+    struct UserInfo
+    {
+        public string userName;
+        public string password;
+    }
 
     public Bank Bank
     {
@@ -16,18 +24,6 @@ class Server
     private Server()
     {
         accounts = new List<PlayerAccount>();
-        connection = new TcpListener(Dns.GetHostAddresses("localhost")[0], PORT_NUMBER);
-    }
-
-    public void start()
-    {
-        connection.Start();
-        const int BUFFER_SIZE = 100;
-        byte[] buffer = new byte[BUFFER_SIZE];
-        TcpClient player = connection.AcceptTcpClient();
-        player.GetStream().Read(buffer, 0, BUFFER_SIZE);
-        System.Console.WriteLine(buffer);
-        connection.Stop();
     }
 
     public void startSession(int sessionid)
@@ -50,6 +46,29 @@ class Server
 
     public static void Main()
     {
+        TcpListener connection = new TcpListener(Dns.GetHostAddresses("localhost")[0], PORT_NUMBER);
+        connection.Start();
+
+        const int BUFFER_SIZE = 100;
+        char[] buffer = new char[BUFFER_SIZE];
+
+        Server server = new Server();
+        while (true)
+        {
+            TcpClient client = connection.AcceptTcpClient();
+            StreamReader reader = new StreamReader(client.GetStream());
+            StreamWriter writer = new StreamWriter(client.GetStream());
+            reader.Read(buffer, 0, BUFFER_SIZE);
+
+            UserInfo deserializedInfo = JsonConvert.DeserializeObject<UserInfo>(new string(buffer));
+
+            System.Console.WriteLine(deserializedInfo.userName);
+            System.Console.WriteLine(deserializedInfo.password);
+
+            break;
+        }
+
+        connection.Stop();
     }
 
     private static readonly Server instance = new Server();
