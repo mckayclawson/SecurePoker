@@ -49,7 +49,7 @@ class Server
         TcpListener connection = new TcpListener(Dns.GetHostAddresses("localhost")[0], PORT_NUMBER);
         connection.Start();
 
-        const int BUFFER_SIZE = 100;
+        const int BUFFER_SIZE = 1000;
         char[] buffer = new char[BUFFER_SIZE];
 
         Server server = new Server();
@@ -58,12 +58,23 @@ class Server
             TcpClient client = connection.AcceptTcpClient();
             StreamReader reader = new StreamReader(client.GetStream());
             StreamWriter writer = new StreamWriter(client.GetStream());
-            reader.Read(buffer, 0, BUFFER_SIZE);
+            reader.Read(buffer, 0, client.Available);
 
-            UserInfo deserializedInfo = JsonConvert.DeserializeObject<UserInfo>(new string(buffer));
+            string bufferData = new string(buffer);
 
-            System.Console.WriteLine(deserializedInfo.userName);
-            System.Console.WriteLine(deserializedInfo.password);
+            string[] lines = bufferData.Split('\n');
+
+            foreach(string line in lines) {
+                if(line.StartsWith("json=")) {
+                    string jsonData = line.Substring(5);
+                    jsonData = WebUtility.UrlDecode(jsonData);
+
+                    UserInfo deserializedInfo = JsonConvert.DeserializeObject<UserInfo>(jsonData);
+
+                    System.Console.WriteLine(deserializedInfo.userName);
+                    System.Console.WriteLine(deserializedInfo.password);
+                }
+            }
         }
 
         connection.Stop();
