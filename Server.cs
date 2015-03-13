@@ -56,6 +56,7 @@ class Server
         while (true)
         {
             TcpClient client = connection.AcceptTcpClient();
+	    buffer = new char[BUFFER_SIZE];
             StreamReader reader = new StreamReader(client.GetStream());
             StreamWriter writer = new StreamWriter(client.GetStream());
             reader.Read(buffer, 0, client.Available);
@@ -75,9 +76,9 @@ class Server
                     System.Console.WriteLine(deserializedInfo.password);
                 }
             }
+	    reader.DiscardBufferedData();
         }
 
-        connection.Stop();
     }
 
     private static readonly Server instance = new Server();
