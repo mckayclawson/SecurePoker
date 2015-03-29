@@ -10,6 +10,10 @@ class PlayerAccount
         get { return wallet; }
     }
 
+    // TODO: Wallet is not necessary. Why not store however much of a player's money is not in a player's bank account in a member variable?
+    // For example:
+    // private uint moneyToBet;
+
     public string UserName
     {
         get { return userName; }

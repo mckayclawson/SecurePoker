@@ -5,7 +5,7 @@ using Newtonsoft.Json.Linq;
 
 public class ServerCommunicator : MonoBehaviour {
 
-	string postUrl = "http://localhost:5000";
+    string postUrl = "http://localhost:" + Server.PortNumber;
 
 	bool waiting = false;
 

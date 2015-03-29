@@ -1,19 +1,19 @@
 class BankAccount
 {
     private string userid;
-    private double balance;
+    private uint balance;
     public string UserID
     {
         get { return userid; }
     }
 
-    public double Balance
+    public uint Balance
     {
         get { return balance; }
         set { balance = value; }
     }
 
-    public BankAccount(string userid, double balance)
+    public BankAccount(string userid, uint balance)
     {
         this.userid = userid;
         this.balance = balance;

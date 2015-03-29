@@ -1,10 +1,11 @@
+using System;
 using System.Net;
 using System.Net.Sockets;
 
 class Client
 {
     private string url;
-    private int port;
+    private uint port;
     private PlayerAccount playerAccount;
     private TcpClient connection;
 
@@ -13,7 +14,7 @@ class Client
         get { return url; }
     }
 
-    public int Port
+    public uint Port
     {
         get { return port; }
     }
@@ -32,11 +33,11 @@ class Client
     {
     }
 
-    public Client(string url, int port, PlayerAccount playerAccount)
+    public Client(string url, uint port, PlayerAccount playerAccount)
     {
         this.url = url;
         this.port = port;
         this.playerAccount = playerAccount;
-        connection = new TcpClient(url, port);
+        connection = new TcpClient(url, Convert.ToInt32(port));
     }
 }

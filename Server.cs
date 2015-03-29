@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
@@ -8,7 +9,13 @@ using Newtonsoft.Json.Serialization;
 
 class Server
 {
-    private List<PlayerAccount> accounts;
+    private static readonly Server instance = new Server();
+    private static readonly uint port_number = 5000;
+
+    public static uint PortNumber
+    {
+        get { return port_number; }
+    }
 
     struct UserInfo
     {
@@ -16,55 +23,96 @@ class Server
         public string password;
     }
 
-    public Bank Bank
-    {
-        get { return Bank.Instance; }
-    }
+    /* Collection of active player accounts. */
+    private List<PlayerAccount> accounts;
 
+    /// <summary>
+    /// 
+    /// </summary>
     private Server()
     {
         accounts = new List<PlayerAccount>();
     }
 
-    public void startSession(int sessionid)
+    /// <summary>
+    /// Starts a new session.
+    /// </summary>
+    /// <returns>
+    ///     a unique, 32-bit, positive integer ID to refer to the session
+    /// </returns>
+    public int startSession()
     {
+        // TODO: start a session, return ID
+        return -1;
     }
 
-    public void endSession(int sessionid)
+    /// <summary>
+    /// Ends the identified session.
+    /// </summary>
+    /// <param name="sessionid">identifier of session to end</param>
+    /// <returns>
+    ///     true if session was successfully ended, false if it was not
+    ///     (for example, in the case of an invalid identifier)
+    /// </returns>
+    public bool endSession(uint sessionid)
     {
+        // TODO: check whether sessionid is valid
+        // TODO: end identified session
+        return false;
     }
 
-    public bool addUser(string userid, string userName, string password)
+    /// <summary>
+    ///     Authenticates the identified user and adds them to identified
+    ///     session upon success.
+    /// </summary>
+    /// <param name="userid">ID of user</param>
+    /// <param name="userName">user's username</param>
+    /// <param name="password">user's password</param>
+    /// <param name="sessionid">ID of session to add user to</param>
+    /// <returns>
+    ///     true if the user was successfully authenticated and added to
+    ///     the session, flase if they were not
+    /// </returns>
+    public bool addUser(string userid, string userName, string password, uint sessionid)
     {
         return false;
     }
 
-    public bool removeUser(string userid)
+    /// <summary>
+    /// Removes the identified user from the identified session.
+    /// </summary>
+    /// <param name="userid">ID of user to remove</param>
+    /// <param name="sessionid">ID of session to remove user from</param>
+    /// <returns>
+    ///     true if the user was successfully removed from the identified
+    ///     session, false otherwise
+    /// </returns>
+    public bool removeUser(string userid, uint sessionid)
     {
         return false;
     }
 
+    /// <summary>
+    ///     The main server loop listens for connections and, upon accepting
+    ///     them, processes incoming requests.
+    /// </summary>
     public static void Main()
     {
-        TcpListener connection = new TcpListener(Dns.GetHostAddresses("localhost")[0], PORT_NUMBER);
+        TcpListener connection = new TcpListener(Dns.GetHostAddresses("localhost")[0], Convert.ToInt32(Server.PortNumber));
         connection.Start();
 
-        const int BUFFER_SIZE = 1000;
-        char[] buffer = new char[BUFFER_SIZE];
+        const int buffer_size = 1024;
+        char[] buffer = new char[buffer_size];
 
         Server server = new Server();
         while (true)
         {
             TcpClient client = connection.AcceptTcpClient();
-	    buffer = new char[BUFFER_SIZE];
             StreamReader reader = new StreamReader(client.GetStream());
             StreamWriter writer = new StreamWriter(client.GetStream());
             reader.Read(buffer, 0, client.Available);
 
-            string bufferData = new string(buffer);
-
-            string[] lines = bufferData.Split('\n');
-
+            string[] lines = new string(buffer).Split('\n');
             foreach(string line in lines) {
                 if(line.StartsWith("json=")) {
                     string jsonData = line.Substring(5);
@@ -76,11 +124,8 @@ class Server
                     System.Console.WriteLine(deserializedInfo.password);
                 }
             }
-	    reader.DiscardBufferedData();
+
+	        reader.DiscardBufferedData();
         }
-
     }
-
-    private static readonly Server instance = new Server();
-    private const int PORT_NUMBER = 5000;
 }

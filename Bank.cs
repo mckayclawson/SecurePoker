@@ -2,6 +2,18 @@ using System.Collections.Generic;
 
 class Bank
 {
+    private static readonly Bank instance = new Bank();
+    public static Bank Instance
+    {
+        get { return instance; }
+    }
+
+    private static readonly uint fixed_money = 10000000;
+    public static uint FixedMoney
+    {
+        get { return fixed_money; }
+    }
+
     private List<BankAccount> accounts;
 
     private Bank()
@@ -17,12 +29,7 @@ class Bank
         // end while
     }
 
-    public static Bank Instance
-    {
-        get { return instance; }
-    }
-
-    public bool withdraw(BankAccount account, double amount)
+    public bool withdraw(BankAccount account, uint amount)
     {
         if (account.Balance < amount)
         {
@@ -33,11 +40,8 @@ class Bank
         return true;
     }
 
-    public void deposit(BankAccount account, double amount)
+    public void deposit(BankAccount account, uint amount)
     {
         account.Balance += amount;
     }
-
-    private static readonly Bank instance = new Bank();
-    private const double FIXED_MONEY = 100000.00;
 }
