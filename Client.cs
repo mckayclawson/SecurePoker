@@ -24,11 +24,6 @@ class Client
         get { return playerAccount; }
     }
 
-    public bool authenticate(string userName, string password)
-    {
-        return false;
-    }
-
     public void move()
     {
     }

@@ -34,6 +34,11 @@ class Server
         accounts = new List<PlayerAccount>();
     }
 
+    public bool authenticate(string userName, string password)
+    {
+        return false;
+    }
+
     /// <summary>
     /// Starts a new session.
     /// </summary>
