@@ -9,6 +9,11 @@ class PlayerAccount
         get { return userName; }
     }
 
+    public bool isBankrupt()
+    {
+        return account.Balance == 0;
+    }
+
     public PlayerAccount(string userid, string userName, BankAccount account)
     {
         this.userid = userid;

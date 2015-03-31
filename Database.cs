@@ -1,3 +1,6 @@
+using System.Data.Common;
+using System.Data.SQLite;
+
 class Database
 {
     private static readonly Database instance = new Database();
@@ -11,7 +14,12 @@ class Database
 
     private Database()
     {
-        // TODO: connect to database
+        DbProviderFactory factory = DbProviderFactories.GetFactory("System.Data.SQLite");
+        using (DbConnection connection = factory.CreateConnection())
+        {
+            connection.ConnectionString = "Data Source=test.db";
+            connection.Open();
+        }
     }
 
     /// <summary>
@@ -31,6 +39,9 @@ class Database
         // record
         // TODO: generate unique user ID
         userid = "null";
+        char[] separator = new char[1];
+        separator[0] = ':';
+        string[] hash_salt_iter = PasswordHash.PasswordHash.CreateHash(password).Split(separator);
 
         // TODO: create bank account record for new user
 
