@@ -121,7 +121,7 @@ class Server
     ///     The main server loop listens for connections and, upon accepting
     ///     them, processes incoming requests.
     /// </summary>
-    public static void Main()
+    public static void _Main()
     {
         TcpListener connection = new TcpListener(Dns.GetHostAddresses("localhost")[0], Convert.ToInt32(Server.PortNumber));
         connection.Start();

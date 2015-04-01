@@ -19,7 +19,7 @@ class Database
 
     private Database()
     {
-        connection = new SQLiteConnection(@"Data Source=C:\Users\Jordan\Documents\Visual Studio 2013\Projects\SecurePoker\SecurePoker\bin\Debug\secure_poker.db; Version=3");
+        connection = new SQLiteConnection(@"Data Source=secure_poker.db");
         connection.Open();
         string sql = "";
         sql += "CREATE TABLE IF NOT EXISTS USER_ACCOUNT_INFO (";
@@ -103,15 +103,17 @@ class Database
         return false;
     }
 
-    public static void _Main(string[] args)
+    public static void Main(string[] args)
     {
         uint i = 0;
         string userid = "jar2119";
+        string password = "notarealorgoodpassword";
+        string wrongpassword = "wrongpassword";
         while (true)
         {
             try
             {
-                bool result = Database.Instance.insertUser(userid, "notarealorgoodpassword");
+                bool result = Database.Instance.insertUser(userid, password);
                 break;
             }
             catch (Exception ex)
@@ -121,7 +123,7 @@ class Database
             }
         }
 
-        Console.WriteLine(Server.Instance.authenticate(userid, "notarealorgoodpassword"));
-        Console.WriteLine(Server.Instance.authenticate(userid, "wrongpassword"));
+        Console.WriteLine("Authenticating password: " + Server.Instance.authenticate(userid, password));
+        Console.WriteLine("Authenticating wrong password: " + Server.Instance.authenticate(userid, wrongpassword));
     }
 }
