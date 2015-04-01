@@ -11,45 +11,26 @@ class Database
         get { return instance; }
     }
 
-    /*
-     * At some point we can put these files in a better, permanent location, and just change the strings to reflect that.
-     * Should these string be hard coded?
-     */
-    private static string connectionString = @"Data Source=C:\Data\Users\Jordan\Documents\School\2145\CSCI-455-01\SECURE_POKER_DB; Version=3";
-    private static string sqlAbsolutePath = @"C:\Data\Users\Jordan\Documents\School\2145\CSCS-455-01\users.sql";
+    readonly uint userid_column_length = 32;
+    readonly uint username_column_length = 16;
+    readonly uint salt_column_length = 4u * (uint)Math.Ceiling(PasswordHash.PasswordHash.SALT_BYTE_SIZE / 3.0);
+    readonly uint hash_column_length = 4u * (uint)Math.Ceiling(PasswordHash.PasswordHash.HASH_BYTE_SIZE / 3.0);
+
     private SQLiteConnection connection;
 
     private Database()
     {
-        connection = new SQLiteConnection(connectionString);
+        connection = new SQLiteConnection(@"Data Source=D:\Users\Jordan\Desktop\secure_poker.db; Version=3");
         connection.Open();
-
-        string sql = string.Empty;
-        try
-        {
-            /*
-             * This is a major security problem: users.sql needs to be protected somehow. Otherwise, someone could simply modify it and do whatever they wanted to.
-             * A simple example would be removing "IF NOT EXISTS" from the CREATE TABLE statement to destroy all existing data.
-             */
-            string[] lines = File.ReadAllLines(sqlAbsolutePath);
-            foreach (string line in lines)
-            {
-                sql += line;
-            }
-        }
-        catch (FileNotFoundException ex)
-        {
-            /*
-             * Now I'm thinking that since the CREATE TABLE statement for the USER_ACCT_INFO table is so short, maybe it should be hard coded.
-             * Otherwise, how should this exception be handled?
-             */
-        }
-
-        if (sql.Length > 0)
-        {
-            SQLiteCommand command = new SQLiteCommand(sql, connection);
-            command.ExecuteNonQuery();
-        }
+        string sql = "";
+        sql += "CREATE TABLE IF NOT EXISTS USER_ACCOUNT_INFO (";
+        sql += "    USERID      VARCHAR(" + userid_column_length + ") PRIMARY KEY,";
+        sql += "    USERNAME    VARCHAR(" + username_column_length + ") NOT NULL,";
+        sql += "    SALT        CHAR(" + salt_column_length + ") NOT NULL,";
+        sql += "    HASH        CHAR(" + hash_column_length + ") NOT NULL";
+        sql += ");";
+        SQLiteCommand command = new SQLiteCommand(sql, connection);
+        command.ExecuteNonQuery();
     }
 
     /// <summary>
@@ -64,40 +45,47 @@ class Database
     /// </returns>
     public bool insertUser(string username, string password, out string userid)
     {
-        const int username_column_length = 16;
         if (username.Length > username_column_length)
         {
             throw new ArgumentException("Username length may not exceed " + username_column_length + " characters.", "username");
         }
 
-        // TODO: generate a salt to store in the record for the new user
-        // TODO: compute the hash of the password plus the salt to store in the
-        // record
-        // TODO: generate unique user ID
-        userid = "null";
-        char[] separator = new char[1];
-        separator[0] = ':';
-        string[] hash_salt_iter = PasswordHash.PasswordHash.CreateHash(password).Split(separator);
+        string sql;
+        SQLiteCommand command;
 
-        string sql = "SELECT USERID FROM USER_ACCT_INFO WHERE USERID LIKE " + username + "%";
-        SQLiteCommand command = new SQLiteCommand(sql, connection);
-        SQLiteDataReader reader = command.ExecuteReader();
         userid = username;
-
-        const int userid_column_length = 32;
-
         uint i = 0;
-        while (reader.Read() && userid.Length < userid_column_length)
-        {
-            if (reader["USERID"].Equals(userid))
-            {
 
+        while (true)
+        {
+            sql = "SELECT * FROM USER_ACCOUNT_INFO WHERE USERID=\"" + userid + "\";";
+            command = new SQLiteCommand(sql, connection);
+            SQLiteDataReader reader = command.ExecuteReader();
+            if (reader.HasRows)
+            {
+                userid = username + i++;
+            }
+            else if (userid.Length <= userid_column_length)
+            {
+                break;
             }
         }
 
-        sql = "INSERT INTO USER_ACCT_INFO (USERID, USERNAME, SALT, HASH) VALUES ";
+        string[] hash_salt_iter = PasswordHash.PasswordHash.CreateHash(password).Split(new char[] { ':' });
 
-        return false;
+        sql = "INSERT INTO USER_ACCOUNT_INFO (USERID, USERNAME, SALT, HASH) VALUES (\"" + userid + "\", \"" + username + "\", \"" + hash_salt_iter[1] + "\", \"" + hash_salt_iter[2] + "\");";
+        System.Console.WriteLine("SQL Statement: " + sql);
+        command = new SQLiteCommand(sql, connection);
+        
+        if (command.ExecuteNonQuery() == 1)
+        {
+            return true;
+        }
+        else
+        {
+            userid = "";
+            return false;
+        }
     }
 
     /// <summary>
@@ -112,5 +100,29 @@ class Database
     {
         // TODO: delete user's records from BankAccoutn and Player databases
         return false;
+    }
+
+    public static void _Main(string[] args)
+    {
+        string userid;
+        bool result = Database.Instance.insertUser("jar2119", "notarealorgoodpassword", out userid);
+        if (result)
+        {
+            Console.WriteLine("record inserted");
+            Console.WriteLine("unique userid: " + userid);
+        }
+        else
+        {
+            Console.WriteLine("record not inserted");
+            if (userid.Equals(""))
+            {
+                Console.WriteLine("userid is empty string as expected");
+            }
+            else
+            {
+                Console.WriteLine("userid is not empty string");
+                Console.WriteLine("unexpected value: " + userid);
+            }
+        }
     }
 }

@@ -118,8 +118,10 @@ class Server
             reader.Read(buffer, 0, client.Available);
 
             string[] lines = new string(buffer).Split('\n');
-            foreach(string line in lines) {
-                if(line.StartsWith("json=")) {
+            foreach (string line in lines)
+            {
+                if (line.StartsWith("json="))
+                {
                     string jsonData = line.Substring(5);
                     jsonData = WebUtility.UrlDecode(jsonData);
 
@@ -130,7 +132,7 @@ class Server
                 }
             }
 
-	        reader.DiscardBufferedData();
+            reader.DiscardBufferedData();
         }
     }
 }
