@@ -12,7 +12,6 @@ class Database
     }
 
     readonly uint userid_column_length = 32;
-    readonly uint username_column_length = 16;
     readonly uint salt_column_length = 4u * (uint)Math.Ceiling(PasswordHash.PasswordHash.SALT_BYTE_SIZE / 3.0);
     readonly uint hash_column_length = 4u * (uint)Math.Ceiling(PasswordHash.PasswordHash.HASH_BYTE_SIZE / 3.0);
 
@@ -20,12 +19,11 @@ class Database
 
     private Database()
     {
-        connection = new SQLiteConnection(@"Data Source=D:\Users\Jordan\Desktop\secure_poker.db; Version=3");
+        connection = new SQLiteConnection(@"Data Source=C:\Users\Jordan\Documents\Visual Studio 2013\Projects\SecurePoker\SecurePoker\bin\Debug\secure_poker.db; Version=3");
         connection.Open();
         string sql = "";
         sql += "CREATE TABLE IF NOT EXISTS USER_ACCOUNT_INFO (";
         sql += "    USERID      VARCHAR(" + userid_column_length + ") PRIMARY KEY,";
-        sql += "    USERNAME    VARCHAR(" + username_column_length + ") NOT NULL,";
         sql += "    SALT        CHAR(" + salt_column_length + ") NOT NULL,";
         sql += "    HASH        CHAR(" + hash_column_length + ") NOT NULL";
         sql += ");";
@@ -33,59 +31,62 @@ class Database
         command.ExecuteNonQuery();
     }
 
+    public bool getHash(string userid, out string hash)
+    {
+        string sql;
+        SQLiteCommand command;
+
+        sql = "SELECT SALT, HASH FROM USER_ACCOUNT_INFO WHERE USERID=\"" + userid + "\";";
+        command = new SQLiteCommand(sql, connection);
+        SQLiteDataReader reader = command.ExecuteReader();
+        if (!reader.HasRows)
+        {
+            hash = "";
+            return false;
+        }
+        else
+        {
+            reader.Read();
+            hash = PasswordHash.PasswordHash.PBKDF2_ITERATIONS + ":" + reader["SALT"] + ":" + reader["HASH"];
+            return true;
+        }
+    }
+
     /// <summary>
     /// Adds (registers) a new user to the database.
     /// </summary>
-    /// <param name="userName">new user's username</param>
+    /// <param name="userid">new user's user ID</param>
     /// <param name="password">new user's password</param>
-    /// <param name="userid">unique string identifying user</param>
     /// <returns>
-    ///     true if the new user was successfully added ot the database,
+    ///     true if the new user was successfully added to the database,
     ///     false if they were not
     /// </returns>
-    public bool insertUser(string username, string password, out string userid)
+    public bool insertUser(string userid, string password)
     {
-        if (username.Length > username_column_length)
+        if (userid.Length > userid_column_length)
         {
-            throw new ArgumentException("Username length may not exceed " + username_column_length + " characters.", "username");
+            throw new ArgumentException("User ID length may not exceed " + userid_column_length + " characters.", "username");
         }
 
         string sql;
         SQLiteCommand command;
 
-        userid = username;
-        uint i = 0;
-
-        while (true)
+        sql = "SELECT * FROM USER_ACCOUNT_INFO WHERE USERID=\"" + userid + "\" LIMIT 1;";
+        command = new SQLiteCommand(sql, connection);
+        using (SQLiteDataReader reader = command.ExecuteReader())
         {
-            sql = "SELECT * FROM USER_ACCOUNT_INFO WHERE USERID=\"" + userid + "\";";
-            command = new SQLiteCommand(sql, connection);
-            SQLiteDataReader reader = command.ExecuteReader();
             if (reader.HasRows)
             {
-                userid = username + i++;
-            }
-            else if (userid.Length <= userid_column_length)
-            {
-                break;
+                throw new Exception("User ID " + userid + " is already in use.");
             }
         }
 
         string[] hash_salt_iter = PasswordHash.PasswordHash.CreateHash(password).Split(new char[] { ':' });
 
-        sql = "INSERT INTO USER_ACCOUNT_INFO (USERID, USERNAME, SALT, HASH) VALUES (\"" + userid + "\", \"" + username + "\", \"" + hash_salt_iter[1] + "\", \"" + hash_salt_iter[2] + "\");";
-        System.Console.WriteLine("SQL Statement: " + sql);
+        sql = "INSERT INTO USER_ACCOUNT_INFO (USERID, SALT, HASH) VALUES (\"" + userid + "\", \"" + hash_salt_iter[1] + "\", \"" + hash_salt_iter[2] + "\");";
         command = new SQLiteCommand(sql, connection);
         
-        if (command.ExecuteNonQuery() == 1)
-        {
-            return true;
-        }
-        else
-        {
-            userid = "";
-            return false;
-        }
+        return command.ExecuteNonQuery() == 1;
     }
 
     /// <summary>
@@ -104,25 +105,23 @@ class Database
 
     public static void _Main(string[] args)
     {
-        string userid;
-        bool result = Database.Instance.insertUser("jar2119", "notarealorgoodpassword", out userid);
-        if (result)
+        uint i = 0;
+        string userid = "jar2119";
+        while (true)
         {
-            Console.WriteLine("record inserted");
-            Console.WriteLine("unique userid: " + userid);
-        }
-        else
-        {
-            Console.WriteLine("record not inserted");
-            if (userid.Equals(""))
+            try
             {
-                Console.WriteLine("userid is empty string as expected");
+                bool result = Database.Instance.insertUser(userid, "notarealorgoodpassword");
+                break;
             }
-            else
+            catch (Exception ex)
             {
-                Console.WriteLine("userid is not empty string");
-                Console.WriteLine("unexpected value: " + userid);
+                Console.WriteLine(ex);
+                userid = "jar2119" + i++;
             }
         }
+
+        Console.WriteLine(Server.Instance.authenticate(userid, "notarealorgoodpassword"));
+        Console.WriteLine(Server.Instance.authenticate(userid, "wrongpassword"));
     }
 }

@@ -12,15 +12,27 @@ class Server
     private static readonly Server instance = new Server();
     private static readonly uint port_number = 5000;
 
+    public static Server Instance
+    {
+        get { return instance; }
+    }
+
     public static uint PortNumber
     {
         get { return port_number; }
     }
 
+    // Note: password should probably actually be an encrypted password that will be decrypted, then checked
     struct UserInfo
     {
-        public string userName;
+        public string userid;
         public string password;
+
+        public UserInfo(string userid, string password)
+        {
+            this.userid = userid;
+            this.password = password;
+        }
     }
 
     /* Collection of active player accounts. */
@@ -34,9 +46,17 @@ class Server
         accounts = new List<PlayerAccount>();
     }
 
-    public bool authenticate(string userName, string password)
+    public bool authenticate(string userid, string password)
     {
-        return false;
+        string hash;
+        if (Database.Instance.getHash(userid, out hash))
+        {
+            return PasswordHash.PasswordHash.ValidatePassword(password, hash);
+        }
+        else
+        {
+            throw new Exception("Could not successfully retrieve password hash.");
+        }
     }
 
     /// <summary>
@@ -127,7 +147,7 @@ class Server
 
                     UserInfo deserializedInfo = JsonConvert.DeserializeObject<UserInfo>(jsonData);
 
-                    System.Console.WriteLine(deserializedInfo.userName);
+                    System.Console.WriteLine(deserializedInfo.userid);
                     System.Console.WriteLine(deserializedInfo.password);
                 }
             }
