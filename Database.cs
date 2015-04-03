@@ -19,36 +19,55 @@ class Database
 
     private Database()
     {
-        connection = new SQLiteConnection(@"Data Source=secure_poker.db");
+        connection = new SQLiteConnection("Data Source=secure_poker.db");
         connection.Open();
-        string sql = "";
-        sql += "CREATE TABLE IF NOT EXISTS USER_ACCOUNT_INFO (";
-        sql += "    USERID      VARCHAR(" + userid_column_length + ") PRIMARY KEY,";
-        sql += "    SALT        CHAR(" + salt_column_length + ") NOT NULL,";
-        sql += "    HASH        CHAR(" + hash_column_length + ") NOT NULL";
-        sql += ");";
-        SQLiteCommand command = new SQLiteCommand(sql, connection);
-        command.ExecuteNonQuery();
+
+        using (SQLiteCommand command = new SQLiteCommand(connection))
+        {
+            string sql = "";
+            sql += "CREATE TABLE IF NOT EXISTS USER_ACCOUNTS (";
+            sql += "    USERID      VARCHAR(" + userid_column_length + ") PRIMARY KEY,";
+            sql += "    SALT        CHAR(" + salt_column_length + ") NOT NULL,";
+            sql += "    HASH        CHAR(" + hash_column_length + ") NOT NULL";
+            sql += ");";
+            command.CommandText = sql;
+            command.Prepare();
+            command.ExecuteNonQuery();
+        }
+
+        using (SQLiteCommand command = new SQLiteCommand(connection))
+        {
+            string sql = "";
+            sql += "CREATE TABLE IF NOT EXISTS BANK_ACCOUNTS (";
+            sql += "    ACCOUNT_NUMBER  INTEGER PRIMARY KEY AUTOINCREMENT,";
+            sql += "    USERID          VARCHAR(" + userid_column_length + ") NOT NULL,";
+            sql += "    BALANCE         INTEGER NOT NULL,";
+            sql += "    FOREIGN KEY(USERID) REFERENCES USER_ACCOUNTS(USERID));";
+            command.CommandText = sql;
+            command.Prepare();
+            command.ExecuteNonQuery();
+        }
     }
 
-    public bool getHash(string userid, out string hash)
+    public string getHash(string userid)
     {
-        string sql;
-        SQLiteCommand command;
+        using (SQLiteCommand command = new SQLiteCommand(connection))
+        {
+            command.CommandText = "SELECT SALT, HASH FROM USER_ACCOUNTS WHERE USERID=\"UserID\";";
+            command.Prepare();
+            SQLiteParameter userid_param = command.CreateParameter();
+            userid_param.ParameterName = "@UserID";
+            command.Parameters.Add(userid_param);
+            using (SQLiteDataReader reader = command.ExecuteReader())
+            {
+                if (!reader.HasRows)
+                {
+                    return "";
+                }
 
-        sql = "SELECT SALT, HASH FROM USER_ACCOUNT_INFO WHERE USERID=\"" + userid + "\";";
-        command = new SQLiteCommand(sql, connection);
-        SQLiteDataReader reader = command.ExecuteReader();
-        if (!reader.HasRows)
-        {
-            hash = "";
-            return false;
-        }
-        else
-        {
-            reader.Read();
-            hash = PasswordHash.PasswordHash.PBKDF2_ITERATIONS + ":" + reader["SALT"] + ":" + reader["HASH"];
-            return true;
+                reader.Read();
+                return PasswordHash.PasswordHash.PBKDF2_ITERATIONS + ":" + reader["SALT"] + ":" + reader["HASH"];
+            }
         }
     }
 
@@ -57,11 +76,7 @@ class Database
     /// </summary>
     /// <param name="userid">new user's user ID</param>
     /// <param name="password">new user's password</param>
-    /// <returns>
-    ///     true if the new user was successfully added to the database,
-    ///     false if they were not
-    /// </returns>
-    public bool insertUser(string userid, string password)
+    public void addUser(string userid, string password)
     {
         if (userid.Length > userid_column_length)
         {
@@ -71,59 +86,87 @@ class Database
         string sql;
         SQLiteCommand command;
 
-        sql = "SELECT * FROM USER_ACCOUNT_INFO WHERE USERID=\"" + userid + "\" LIMIT 1;";
+        sql = "SELECT * FROM USER_ACCOUNTS WHERE USERID=\"" + userid + "\" LIMIT 1;";
         command = new SQLiteCommand(sql, connection);
         using (SQLiteDataReader reader = command.ExecuteReader())
         {
             if (reader.HasRows)
             {
-                throw new Exception("User ID " + userid + " is already in use.");
+                throw new Exception("User ID " + userid + " is already in use.");   // maybe some derived exception type, perhaps a custom one, should be thrown here
             }
         }
 
         string[] hash_salt_iter = PasswordHash.PasswordHash.CreateHash(password).Split(new char[] { ':' });
 
-        sql = "INSERT INTO USER_ACCOUNT_INFO (USERID, SALT, HASH) VALUES (\"" + userid + "\", \"" + hash_salt_iter[1] + "\", \"" + hash_salt_iter[2] + "\");";
+        sql = "INSERT INTO USER_ACCOUNTS (USERID, SALT, HASH) VALUES (\"" + userid + "\", \"" + hash_salt_iter[1] + "\", \"" + hash_salt_iter[2] + "\");";
         command = new SQLiteCommand(sql, connection);
-        
-        return command.ExecuteNonQuery() == 1;
+        command.ExecuteNonQuery();
+
+        sql = "INSERT INTO BANK_ACCOUNTS (USERID, BALANCE) VALUES (\"" + userid + "\", 0);"; // should the initial account balance be zero, some provided value, or some generated value?
+        command = new SQLiteCommand(sql, connection);
+        command.ExecuteNonQuery();
     }
 
     /// <summary>
     /// Removes (unregisters) identified user from the database.
     /// </summary>
     /// <param name="userid">ID of the user to remove</param>
-    /// <returns>
-    ///     true if the identified user's record was successfully removed
-    ///     from the database, false if it was not
-    /// </returns>
-    public bool deleteUser(string userid)
+    public void removeUser(string userid)
     {
-        // TODO: delete user's records from BankAccoutn and Player databases
-        return false;
+        string sql = "DELETE FROM BANK_ACCOUNTS WHERE USERID=\"" + userid + "\";";
+        SQLiteCommand command = new SQLiteCommand(sql, connection);
+        command.ExecuteNonQuery();
+
+        sql = "DELETE FROM USER_ACCOUNTS WHERE USERID=\"" + userid + "\";";
+        command = new SQLiteCommand(sql, connection);
+        command.ExecuteNonQuery();
     }
 
     public static void Main(string[] args)
     {
-        uint i = 0;
-        string userid = "jar2119";
+        string orig_id = "jar2119";
+        string userid = orig_id;
         string password = "notarealorgoodpassword";
         string wrongpassword = "wrongpassword";
+        Database db = Database.Instance;
+
+        uint i = 0;
         while (true)
         {
             try
             {
-                bool result = Database.Instance.insertUser(userid, password);
+                db.addUser(userid, password);
                 break;
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                userid = "jar2119" + i++;
+                userid = orig_id + i++;
             }
         }
 
-        Console.WriteLine("Authenticating password: " + Server.Instance.authenticate(userid, password));
-        Console.WriteLine("Authenticating wrong password: " + Server.Instance.authenticate(userid, wrongpassword));
+        try
+        {
+            db.removeUser(userid);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
+
+        Server server = Server.Instance;
+        Console.WriteLine("Authenticating password: " + (server.authenticate(userid, password) == true ? "Success!" : "FAIL"));
+        Console.WriteLine("Authenticating wrong password: " + (server.authenticate(userid, wrongpassword) == false ? "Success!" : "FAIL"));
+
+        userid += i++;
+        try
+        {
+            Console.WriteLine("Attempting to remove non-existing user " + userid + ".");
+            db.removeUser(userid);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
     }
 }

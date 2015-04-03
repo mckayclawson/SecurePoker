@@ -11,6 +11,7 @@ class Server
 {
     private static readonly Server instance = new Server();
     private static readonly uint port_number = 5000;
+    private static readonly Database db = Database.Instance;
 
     public static Server Instance
     {
@@ -48,15 +49,8 @@ class Server
 
     public bool authenticate(string userid, string password)
     {
-        string hash;
-        if (Database.Instance.getHash(userid, out hash))
-        {
-            return PasswordHash.PasswordHash.ValidatePassword(password, hash);
-        }
-        else
-        {
-            throw new Exception("Could not successfully retrieve password hash.");
-        }
+        string hash = db.getHash(userid);
+        return PasswordHash.PasswordHash.ValidatePassword(password, db.getHash(userid));
     }
 
     /// <summary>
@@ -98,7 +92,7 @@ class Server
     ///     true if the user was successfully authenticated and added to
     ///     the session, flase if they were not
     /// </returns>
-    public bool addUser(string userid, string userName, string password, uint sessionid)
+    public bool addUser(string userid, string password, uint sessionid)
     {
         return false;
     }
