@@ -16,6 +16,9 @@ class Database
 
     private SQLiteConnection connection;
 
+    /// <summary>
+    /// Initializes connection to database and creates tables if they do not already exist.
+    /// </summary>
     private Database()
     {
         connection = new SQLiteConnection("Data Source=secure_poker.db");
@@ -46,6 +49,17 @@ class Database
         }
     }
 
+    /// <summary>
+    /// Retrieves the hash of the specified user's password.
+    /// </summary>
+    /// <param name="userid">ID of user</param>
+    /// <returns>
+    ///     Three strings concatenated with colons in the following order:
+    ///         Number of PBKDF2 iterations
+    ///         Salt
+    ///         Password hash
+    ///     The salt and password hash are Base64 encoded.
+    /// </returns>
     public string GetHash(string userid)
     {
         using (SQLiteCommand command = new SQLiteCommand(connection))
