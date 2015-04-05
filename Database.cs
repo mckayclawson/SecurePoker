@@ -5,15 +5,14 @@ using System.IO;
 
 class Database
 {
+    readonly uint userid_column_length = 32;
+    readonly uint salt_column_length = 4u * (uint)Math.Ceiling(PasswordHash.PasswordHash.SALT_BYTE_SIZE / 3.0);
+    readonly uint hash_column_length = 4u * (uint)Math.Ceiling(PasswordHash.PasswordHash.HASH_BYTE_SIZE / 3.0);
     private static readonly Database instance = new Database();
     public static Database Instance
     {
         get { return instance; }
     }
-
-    readonly uint userid_column_length = 32;
-    readonly uint salt_column_length = 4u * (uint)Math.Ceiling(PasswordHash.PasswordHash.SALT_BYTE_SIZE / 3.0);
-    readonly uint hash_column_length = 4u * (uint)Math.Ceiling(PasswordHash.PasswordHash.HASH_BYTE_SIZE / 3.0);
 
     private SQLiteConnection connection;
 
@@ -31,7 +30,6 @@ class Database
             sql += "    HASH        CHAR(" + hash_column_length + ") NOT NULL";
             sql += ");";
             command.CommandText = sql;
-            command.Prepare();
             command.ExecuteNonQuery();
         }
 
@@ -44,25 +42,21 @@ class Database
             sql += "    BALANCE         INTEGER NOT NULL,";
             sql += "    FOREIGN KEY(USERID) REFERENCES USER_ACCOUNTS(USERID));";
             command.CommandText = sql;
-            command.Prepare();
             command.ExecuteNonQuery();
         }
     }
 
-    public string getHash(string userid)
+    public string GetHash(string userid)
     {
         using (SQLiteCommand command = new SQLiteCommand(connection))
         {
-            command.CommandText = "SELECT SALT, HASH FROM USER_ACCOUNTS WHERE USERID=\"UserID\";";
-            command.Prepare();
-            SQLiteParameter userid_param = command.CreateParameter();
-            userid_param.ParameterName = "@UserID";
-            command.Parameters.Add(userid_param);
+            command.CommandText = "SELECT SALT, HASH FROM USER_ACCOUNTS WHERE USERID=@UserID";
+            command.Parameters.AddWithValue("@UserID", userid);
             using (SQLiteDataReader reader = command.ExecuteReader())
             {
                 if (!reader.HasRows)
                 {
-                    return "";
+                    throw new Exception("Invalid user ID " + userid + ".");
                 }
 
                 reader.Read();
@@ -76,56 +70,66 @@ class Database
     /// </summary>
     /// <param name="userid">new user's user ID</param>
     /// <param name="password">new user's password</param>
-    public void addUser(string userid, string password)
+    public void AddUser(string userid, string password)
     {
         if (userid.Length > userid_column_length)
         {
             throw new ArgumentException("User ID length may not exceed " + userid_column_length + " characters.", "username");
         }
 
-        string sql;
-        SQLiteCommand command;
-
-        sql = "SELECT * FROM USER_ACCOUNTS WHERE USERID=\"" + userid + "\" LIMIT 1;";
-        command = new SQLiteCommand(sql, connection);
-        using (SQLiteDataReader reader = command.ExecuteReader())
+        using (SQLiteCommand command = new SQLiteCommand(connection))
         {
-            if (reader.HasRows)
+            command.CommandText = "SELECT * FROM USER_ACCOUNTS WHERE USERID=@UserID LIMIT 1;";
+            command.Parameters.AddWithValue("@UserID", userid);
+            using (SQLiteDataReader reader = command.ExecuteReader())
             {
-                throw new Exception("User ID " + userid + " is already in use.");   // maybe some derived exception type, perhaps a custom one, should be thrown here
+                if (reader.HasRows) { throw new Exception("User ID " + userid + " is already in use."); }
             }
         }
 
-        string[] hash_salt_iter = PasswordHash.PasswordHash.CreateHash(password).Split(new char[] { ':' });
+        string[] hash_salt_iter = PasswordHash.PasswordHash.CreateHash(password).Split(new char[]{ ':' });
+        using (SQLiteCommand command = new SQLiteCommand(connection))
+        {
+            command.CommandText = "INSERT INTO USER_ACCOUNTS (USERID, SALT, HASH) VALUES (@UserID, @Salt, @Hash);";
+            command.Parameters.AddWithValue("@UserID", userid);
+            command.Parameters.AddWithValue("@Salt", hash_salt_iter[PasswordHash.PasswordHash.SALT_INDEX]);
+            command.Parameters.AddWithValue("@Hash", hash_salt_iter[PasswordHash.PasswordHash.PBKDF2_INDEX]);
+            command.ExecuteNonQuery();
+        }
 
-        sql = "INSERT INTO USER_ACCOUNTS (USERID, SALT, HASH) VALUES (\"" + userid + "\", \"" + hash_salt_iter[1] + "\", \"" + hash_salt_iter[2] + "\");";
-        command = new SQLiteCommand(sql, connection);
-        command.ExecuteNonQuery();
-
-        sql = "INSERT INTO BANK_ACCOUNTS (USERID, BALANCE) VALUES (\"" + userid + "\", 0);"; // should the initial account balance be zero, some provided value, or some generated value?
-        command = new SQLiteCommand(sql, connection);
-        command.ExecuteNonQuery();
+        using (SQLiteCommand command = new SQLiteCommand(connection))
+        {
+            command.CommandText = "INSERT INTO BANK_ACCOUNTS (USERID, BALANCE) VALUES (@UserID, 0);";
+            command.Parameters.AddWithValue("@UserID", userid);
+            command.ExecuteNonQuery();
+        }
     }
 
     /// <summary>
     /// Removes (unregisters) identified user from the database.
     /// </summary>
     /// <param name="userid">ID of the user to remove</param>
-    public void removeUser(string userid)
+    public void RemoveUser(string userid)
     {
-        string sql = "DELETE FROM BANK_ACCOUNTS WHERE USERID=\"" + userid + "\";";
-        SQLiteCommand command = new SQLiteCommand(sql, connection);
-        command.ExecuteNonQuery();
+        using (SQLiteCommand command = new SQLiteCommand(connection))
+        {
+            command.CommandText = "DELETE FROM BANK_ACCOUNTS WHERE USERID=@UserID;";
+            command.Parameters.AddWithValue("@UserID", userid);
+            command.ExecuteNonQuery();
+        }
 
-        sql = "DELETE FROM USER_ACCOUNTS WHERE USERID=\"" + userid + "\";";
-        command = new SQLiteCommand(sql, connection);
-        command.ExecuteNonQuery();
+        using (SQLiteCommand command = new SQLiteCommand(connection))
+        {
+            command.CommandText = "DELETE FROM USER_ACCOUNTS WHERE USERID=@UserID;";
+            command.Parameters.AddWithValue("@UserID", userid);
+            command.ExecuteNonQuery();
+        }
     }
 
-    public static void Main(string[] args)
+    public static void Main()
     {
         string orig_id = "jar2119";
-        string userid = orig_id;
+        string unique_id = orig_id;
         string password = "notarealorgoodpassword";
         string wrongpassword = "wrongpassword";
         Database db = Database.Instance;
@@ -135,38 +139,21 @@ class Database
         {
             try
             {
-                db.addUser(userid, password);
+                db.AddUser(unique_id, password);
                 break;
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
-                userid = orig_id + i++;
+                Console.WriteLine(unique_id + " already in use.");
+                unique_id = orig_id + i++;
             }
         }
 
-        try
-        {
-            db.removeUser(userid);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex);
-        }
-
+        Console.WriteLine("Added user " + unique_id);
         Server server = Server.Instance;
-        Console.WriteLine("Authenticating password: " + (server.authenticate(userid, password) == true ? "Success!" : "FAIL"));
-        Console.WriteLine("Authenticating wrong password: " + (server.authenticate(userid, wrongpassword) == false ? "Success!" : "FAIL"));
-
-        userid += i++;
-        try
-        {
-            Console.WriteLine("Attempting to remove non-existing user " + userid + ".");
-            db.removeUser(userid);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex);
-        }
+        Console.WriteLine("Authenticating password: " + (server.authenticate(unique_id, password) == true ? "Pass" : "FAIL"));
+        Console.WriteLine("Authenticating wrong password: " + (server.authenticate(unique_id, wrongpassword) == false ? "Pass" : "FAIL"));
+        //db.RemoveUser(unique_id);
+        //Console.WriteLine("Removed user " + unique_id);
     }
 }

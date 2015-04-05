@@ -49,8 +49,7 @@ class Server
 
     public bool authenticate(string userid, string password)
     {
-        string hash = db.getHash(userid);
-        return PasswordHash.PasswordHash.ValidatePassword(password, db.getHash(userid));
+        return PasswordHash.PasswordHash.ValidatePassword(password, db.GetHash(userid));
     }
 
     /// <summary>
