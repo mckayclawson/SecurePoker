@@ -1,23 +1,28 @@
 class PlayerAccount
 {
-    private string userid;
-    private string userName;
-    private BankAccount account;
+    private static readonly Database db = Database.Instance;
 
-    public string UserName
+    private BankAccount bankAccount;
+    private string userid;
+
+    public BankAccount BankAccount
     {
-        get { return userName; }
+        get { return bankAccount; }
+    }
+
+    public string UserID
+    {
+        get { return userid; }
     }
 
     public bool isBankrupt()
     {
-        return account.Balance == 0;
+        return bankAccount.Balance == 0;
     }
 
-    public PlayerAccount(string userid, string userName, BankAccount account)
+    public PlayerAccount(string userid)
     {
         this.userid = userid;
-        this.userName = userName;
-        this.account = account;
-    }    
+        bankAccount = db.LoadBankAccount(userid);
+    }
 }

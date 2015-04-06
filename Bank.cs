@@ -28,20 +28,4 @@ class Bank
         //    add the new BankAccount to the accounts list
         // end while
     }
-
-    public bool withdraw(BankAccount account, uint amount)
-    {
-        if (account.Balance < amount)
-        {
-            return false;
-        }
-
-        account.Balance -= amount;
-        return true;
-    }
-
-    public void deposit(BankAccount account, uint amount)
-    {
-        account.Balance += amount;
-    }
 }
