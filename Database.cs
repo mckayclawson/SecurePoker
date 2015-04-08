@@ -3,12 +3,20 @@ using System.Data.Common;
 using System.Data.SQLite;
 using System.IO;
 
+/// <summary>
+///     Encapsulates operations for registering and unregistering users and
+///     updating banking information.
+/// </summary>
 class Database
 {
     readonly uint userid_column_length = 32;
     readonly uint salt_column_length = 4u * (uint)Math.Ceiling(PasswordHash.PasswordHash.SALT_BYTE_SIZE / 3.0);
     readonly uint hash_column_length = 4u * (uint)Math.Ceiling(PasswordHash.PasswordHash.HASH_BYTE_SIZE / 3.0);
     private static readonly Database instance = new Database();
+
+    /// <summary>
+    ///     Singleton instance of the database.
+    /// </summary>
     public static Database Instance
     {
         get { return instance; }
@@ -17,7 +25,7 @@ class Database
     private SQLiteConnection connection;
 
     /// <summary>
-    /// Initializes connection to database and creates tables if they do not already exist.
+    ///     Initializes connection to database and creates tables if they do not already exist.
     /// </summary>
     private Database()
     {
@@ -50,7 +58,7 @@ class Database
     }
 
     /// <summary>
-    /// Retrieves the hash of the specified user's password.
+    ///     Retrieves the hash of the specified user's password.
     /// </summary>
     /// <param name="userid">ID of user</param>
     /// <returns>
@@ -80,7 +88,7 @@ class Database
     }
 
     /// <summary>
-    /// Adds (registers) a new user to the database.
+    ///     Adds (registers) a new user to the database.
     /// </summary>
     /// <param name="userid">new user's user ID</param>
     /// <param name="password">new user's password</param>
@@ -120,7 +128,7 @@ class Database
     }
 
     /// <summary>
-    /// Removes (unregisters) identified user from the database.
+    ///     Removes (unregisters) identified user from the database.
     /// </summary>
     /// <param name="userid">ID of the user to remove</param>
     public void RemoveUser(string userid)
@@ -140,6 +148,14 @@ class Database
         }
     }
 
+    /// <summary>
+    ///     Loads the information for the specified user's bank account.
+    /// </summary>
+    /// <param name="userid">ID of user</param>
+    /// <returns>
+    ///     Reference to a BankAccount that has been initialized with the user's
+    ///     bank account information.
+    /// </returns>
     public BankAccount LoadBankAccount(string userid)
     {
         using (SQLiteCommand command = new SQLiteCommand(connection))
@@ -160,6 +176,11 @@ class Database
         }
     }
 
+    /// <summary>
+    ///     Updates a user's bank account balance.
+    /// </summary>
+    /// <param name="accountNumber">The number identifying the bank account.</param>
+    /// <param name="balance">The new bank account balance.</param>
     public void UpdateAccountBalance(uint accountNumber, uint balance)
     {
         using(SQLiteCommand command = new SQLiteCommand(connection))
@@ -171,56 +192,40 @@ class Database
         }
     }
 
-    // sloppy test code, please ignore
-    public static void Main()
+    /// <summary>
+    ///     Tests the UpdateAccountBalance method.
+    /// </summary>
+    /// <returns>
+    ///     True if the method passes the test, false if it does not.
+    /// </returns>
+    private static bool TestAccountBalanceUpdate()
     {
-        //string orig_id = "jar2119";
-        //string unique_id = orig_id;
-        //string password = "notarealorgoodpassword";
-        //string wrongpassword = "wrongpassword";
-        //Database db = Database.Instance;
-
-        //uint i = 0;
-        //while (true)
-        //{
-        //    try
-        //    {
-        //        db.AddUser(unique_id, password);
-        //        break;
-        //    }
-        //    catch (Exception)
-        //    {
-        //        Console.WriteLine(unique_id + " already in use.");
-        //        unique_id = orig_id + i++;
-        //    }
-        //}
-
-        //Console.WriteLine("Added user " + unique_id);
-        //Server server = Server.Instance;
-        //Console.WriteLine("Authenticating password: " + (server.authenticate(unique_id, password) == true ? "Pass" : "FAIL"));
-        //Console.WriteLine("Authenticating wrong password: " + (server.authenticate(unique_id, wrongpassword) == false ? "Pass" : "FAIL"));
-        //PlayerAccount player = new PlayerAccount(unique_id);
-        PlayerAccount player = new PlayerAccount("jar211926");
-        Console.WriteLine(player.UserID + "\'s bank account number is " + player.BankAccount.AccountNumber);// + " and balance is $" + player.BankAccount.Balance / 100 + "." + player.BankAccount.Balance % 100);
-        uint amt = 10000;
-        player.BankAccount.deposit(amt);
-        Console.WriteLine("Deposited $" + amt / 100 + "." + amt % 100);
-        Console.WriteLine("Balance is now $" + player.BankAccount.Balance / 100 + "." + player.BankAccount.Balance % 100);
-        player.BankAccount.withdraw(amt);
-        Console.WriteLine("Withdrew $" + amt / 100 + "." + amt % 100);
-        Console.WriteLine("Balance is now $" + player.BankAccount.Balance / 100 + "." + player.BankAccount.Balance % 100);
-        amt = 500;
-        player.BankAccount.deposit(amt);
-        Console.WriteLine("Deposited $" + amt / 100 + "." + amt % 100);
+        string userid = "jar2119";
+        string password = "password";
+        Database db = Database.Instance;
         try
         {
-            amt = player.BankAccount.Balance * 2;
-            player.BankAccount.withdraw(amt);
+            db.AddUser(userid, password);
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Attempted to withdraw $" + amt / 100 + "." + amt % 100 + " from account with balance $" + player.BankAccount.Balance / 100 + "." + player.BankAccount.Balance % 100);
         }
-        Console.WriteLine("Amount remains at $" + player.BankAccount.Balance / 100 + "." + player.BankAccount.Balance % 100 + ", as before.");
+        PlayerAccount player = new PlayerAccount(userid);
+        BankAccount bankAccount = player.BankAccount;
+        uint b1 = bankAccount.Balance;
+        uint amount = 10000;
+        bankAccount.deposit(amount);
+        uint b2 = bankAccount.Balance;
+        player = new PlayerAccount(userid);
+        bankAccount = player.BankAccount;
+        return bankAccount.Balance == b2;
+    }
+
+    public static void Main()
+    {
+        for (int i = 0; i < 10; i++)
+        {
+            Console.WriteLine("Testing bank account balance update: " + (TestAccountBalanceUpdate() ? "Pass" : "FAIL"));
+        }
     }
 }
