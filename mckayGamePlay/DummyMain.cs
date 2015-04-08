@@ -10,9 +10,9 @@ namespace ConsoleApplication2
     {
         static void Main(string[] args)
         {
-            Particpant m = new Particpant("mckay", 100);
-            Particpant z = new Particpant("zak", 100);
-            Particpant j = new Particpant("jordan", 100);
+            Particpant m = new Particpant("mckay", 1000);
+            Particpant z = new Particpant("zak", 1000);
+            Particpant j = new Particpant("jordan", 1000);
             List<Particpant> p = new List<Particpant>();
             p.Add(m);
             p.Add(z);
@@ -21,6 +21,14 @@ namespace ConsoleApplication2
             SecurePoker game = new SecurePoker(p);
 
             game.StartRound();
+            game.AnteUp();
+            game.Bets();
+            game.Flop();
+            game.Bets();
+            game.Turn();
+            game.Bets();
+            game.River();
+            game.Bets();
             Console.Read();
         }
     }

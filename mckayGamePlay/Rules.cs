@@ -8,5 +8,9 @@ namespace ConsoleApplication2
 {
     class Rules
     {
+        public void judgeHand(List<Card> hand, List<Card> table)
+        {
+            
+        }
     }
 }
