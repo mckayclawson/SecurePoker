@@ -22,6 +22,7 @@ namespace ConsoleApplication2
 
             game.StartRound();
             game.AnteUp();
+            game.DealRound();
             game.Bets();
             game.Flop();
             game.Bets();
@@ -29,6 +30,7 @@ namespace ConsoleApplication2
             game.Bets();
             game.River();
             game.Bets();
+            game.judgeWinner();
             Console.Read();
         }
     }

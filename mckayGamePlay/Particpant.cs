@@ -10,6 +10,7 @@ namespace ConsoleApplication2
     {
         public string PlayerName { get; private set; }
         public double money { get; set; }
+        public double currentBet;
         public List<Card> hand;
         public bool isFold;
         public Particpant(string playerName, double money)
@@ -17,6 +18,7 @@ namespace ConsoleApplication2
             this.PlayerName = playerName;
             this.money = money;
             this.hand = new List<Card>(2);
+            currentBet = 0;
             this.isFold = false;
         }
 
@@ -31,6 +33,7 @@ namespace ConsoleApplication2
             if (money > amount)
             {
                 money -= amount;
+                currentBet += amount;
                 return amount;
             }
             else
@@ -38,6 +41,11 @@ namespace ConsoleApplication2
                 //TODO should we kick players out or make them fold??
             }
             return 0;
+        }
+
+        public void depositMoney(double amount)
+        {
+            this.money += amount;
         }
         
         

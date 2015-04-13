@@ -8,8 +8,8 @@ namespace ConsoleApplication2
 {
     class Card
     {
-        string suit { get;  set; }
-        char value { get;  set; }
+        public string suit { get;  set; }
+        public char value { get;  set; }
 
         public Card(string suit, char value)
         {

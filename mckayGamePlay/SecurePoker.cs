@@ -33,9 +33,9 @@ namespace ConsoleApplication2
             foreach (Particpant player in players)
             {
                 player.isFold = false;
+                player.currentBet = 0;
             }
             this.roundInProgress = true;
-
             
         }
 
@@ -43,7 +43,7 @@ namespace ConsoleApplication2
         public void AnteUp()
         {
             pot += players[(dealerIndex + 1) % players.Count].withdrawMoney(smallBlind);
-            pot += players[(dealerIndex + 1) % players.Count].withdrawMoney(bigBlind);
+            pot += players[(dealerIndex + 2) % players.Count].withdrawMoney(bigBlind);
             Console.WriteLine("Anted up");
         }
 
@@ -57,12 +57,22 @@ namespace ConsoleApplication2
 
         public void Bets()
         {
+            double maxBet = 0;
             //TODO bets should be happening from the left of the dealer (not in the order of the participant list)
+            
             foreach (Particpant player in players)
             {
+                foreach (Particpant p in players)
+                {
+                    if (p.currentBet > maxBet)
+                    {
+                        maxBet = p.currentBet;
+                    }
+                }
+                
                 if (!player.isFold)
                 {
-                    Console.WriteLine("It's " + player.PlayerName + "'s bet: cent amount or f for fold");
+                    Console.WriteLine("It's " + player.PlayerName + "'s bet: cent amount or f for fold. The calling amount is: "+ (maxBet-player.currentBet));
                     string input = Console.ReadLine();
                     if (input.Equals("f"))
                     {
@@ -71,12 +81,19 @@ namespace ConsoleApplication2
                     }
                     else
                     {
-                        //TODO a bet shouldn't be smaller than max bet
                         //TODO handle bad input
-                        //TODO keep track of each players bet amount for the entire hand
                         double bet = Double.Parse(input);
-                        pot += player.withdrawMoney(bet);
-                        Console.WriteLine(player.PlayerName + " bet " + input);
+                        if (bet < (maxBet - player.currentBet))
+                        {
+                            Console.WriteLine("You must bet the calling amount, player " + player.PlayerName + " has folded");
+                            player.isFold = true;
+                        }
+                        else
+                        {
+                            pot += player.withdrawMoney(bet);
+                            Console.WriteLine(player.PlayerName + " bet " + input);
+                        }
+                        
                     }
                 }
             }
@@ -117,6 +134,28 @@ namespace ConsoleApplication2
             {
                 Console.WriteLine(c.ToString());
             }
+        }
+
+        public void judgeWinner()
+        {
+            int winningIndex = 0;
+            int bestHand = 0;
+            for (int i = 0; i < players.Count; i++)
+            {
+                if(!(players[i].isFold))
+                {
+                    int thisHand = Rules.judgeHand(players[i].hand, table);
+                    if (thisHand > bestHand)
+                    {
+                        bestHand = thisHand;
+                        winningIndex = i;
+                    }
+                }
+                
+            }
+            //TODO Account for possible tied hands (need to judge high card and be able to split the pot
+            Console.WriteLine("Player " + players[winningIndex].PlayerName + " has won pot of " + pot + " cents.\nRound Over.");
+            players[winningIndex].depositMoney(pot);
         }
     }
 }
