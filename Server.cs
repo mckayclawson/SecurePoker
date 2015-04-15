@@ -114,38 +114,38 @@ class Server
     ///     The main server loop listens for connections and, upon accepting
     ///     them, processes incoming requests.
     /// </summary>
-    public static void _Main()
-    {
-        TcpListener connection = new TcpListener(Dns.GetHostAddresses("localhost")[0], Convert.ToInt32(Server.PortNumber));
-        connection.Start();
+    //public static void _Main()
+    //{
+    //    TcpListener connection = new TcpListener(Dns.GetHostAddresses("localhost")[0], Convert.ToInt32(Server.PortNumber));
+    //    connection.Start();
 
-        const int buffer_size = 1024;
-        char[] buffer = new char[buffer_size];
+    //    const int buffer_size = 1024;
+    //    char[] buffer = new char[buffer_size];
 
-        Server server = new Server();
-        while (true)
-        {
-            TcpClient client = connection.AcceptTcpClient();
-            StreamReader reader = new StreamReader(client.GetStream());
-            StreamWriter writer = new StreamWriter(client.GetStream());
-            reader.Read(buffer, 0, client.Available);
+    //    Server server = new Server();
+    //    while (true)
+    //    {
+    //        TcpClient client = connection.AcceptTcpClient();
+    //        StreamReader reader = new StreamReader(client.GetStream());
+    //        StreamWriter writer = new StreamWriter(client.GetStream());
+    //        reader.Read(buffer, 0, client.Available);
 
-            string[] lines = new string(buffer).Split('\n');
-            foreach (string line in lines)
-            {
-                if (line.StartsWith("json="))
-                {
-                    string jsonData = line.Substring(5);
-                    jsonData = WebUtility.UrlDecode(jsonData);
+    //        string[] lines = new string(buffer).Split('\n');
+    //        foreach (string line in lines)
+    //        {
+    //            if (line.StartsWith("json="))
+    //            {
+    //                string jsonData = line.Substring(5);
+    //                jsonData = WebUtility.UrlDecode(jsonData);
 
-                    UserInfo deserializedInfo = JsonConvert.DeserializeObject<UserInfo>(jsonData);
+    //                UserInfo deserializedInfo = JsonConvert.DeserializeObject<UserInfo>(jsonData);
 
-                    System.Console.WriteLine(deserializedInfo.userid);
-                    System.Console.WriteLine(deserializedInfo.password);
-                }
-            }
+    //                System.Console.WriteLine(deserializedInfo.userid);
+    //                System.Console.WriteLine(deserializedInfo.password);
+    //            }
+    //        }
 
-            reader.DiscardBufferedData();
-        }
-    }
+    //        reader.DiscardBufferedData();
+    //    }
+    //}
 }

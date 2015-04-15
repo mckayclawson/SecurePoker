@@ -2,5 +2,10 @@ using System.Collections.Generic;
 
 class Session
 {
-    List<PlayerAccount> players; // players currently in game
+    private List<PlayerAccount> players; // players currently in game
+
+    public Session()
+    {
+        players = new List<PlayerAccount>();
+    }
 }

@@ -1,7 +1,7 @@
 using System;
 
 /// <summary>
-///     Represents a bank account which a player can deposit mmoney into or
+///     Represents a bank account which a player can deposit money into or
 ///     withdraw money from.
 /// </summary>
 class BankAccount
@@ -96,6 +96,9 @@ class BankAccount
     {
         uint dollars, cents;
         FromCents(amount, out dollars, out cents);
-        return "$" + dollars + "." + (cents < 10 ? "0" : "") + cents;   // maybe use string formatting method
+        string amt_string = "$" + dollars + ".";
+        if (cents < 10) { amt_string += "0"; }
+        amt_string += cents;
+        return amt_string;
     }
 }

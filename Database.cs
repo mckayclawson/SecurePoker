@@ -207,7 +207,7 @@ class Database
         {
             db.AddUser(userid, password);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
         }
         PlayerAccount player = new PlayerAccount(userid);
